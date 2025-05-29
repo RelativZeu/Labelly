@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -49,6 +50,17 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+
+    // Firebase BOM - gestionează versiunile
+    implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth-ktx")
+
+    // Cloud Firestore
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // Firebase Analytics (opțional)
+    implementation("com.google.firebase:firebase-analytics-ktx")
 
     // Pentru navigare (opțional pentru viitor)
     implementation("androidx.navigation:navigation-compose:2.7.6")

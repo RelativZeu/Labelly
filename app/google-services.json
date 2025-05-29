@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1015988149374",
+    "project_id": "labelly-6ca4a",
+    "storage_bucket": "labelly-6ca4a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1015988149374:android:41038bf8495f9c21cccc2f",
+        "android_client_info": {
+          "package_name": "com.example.labelly_application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxf1BKc7kTGiTh4ASPCU5aC9FvYLxxaaI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
