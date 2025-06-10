@@ -33,12 +33,14 @@ class AuthRepository {
             val user = result.user
 
             if (user != null) {
-                // Salvează informațiile utilizatorului în Firestore
+                // Salvează DOAR informațiile publice ale utilizatorului în Firestore
+                // ATENȚIE: Nu salvăm niciodată parola în baza de date!
                 val userMap = mapOf(
                     "uid" to user.uid,
                     "email" to email,
                     "username" to username,
-                    "createdAt" to System.currentTimeMillis()
+                    "createdAt" to System.currentTimeMillis(),
+                    "profileCompleted" to false
                 )
 
                 firestore.collection("users")
@@ -65,6 +67,24 @@ class AuthRepository {
         }
     }
 
+    // Schimbarea parolei pentru utilizatorul logat
+    suspend fun changePassword(currentPassword: String, newPassword: String): Result<Unit> {
+        return try {
+            val user = currentUser ?: return Result.failure(Exception("User not logged in"))
+
+            // Re-autentifică utilizatorul cu parola curentă
+            val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(user.email!!, currentPassword)
+            user.reauthenticate(credential).await()
+
+            // Schimbă parola
+            user.updatePassword(newPassword).await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     // Logout
     fun logout() {
         auth.signOut()
@@ -76,10 +96,12 @@ class AuthRepository {
     }
 
     // Obține informațiile utilizatorului din Firestore
-    suspend fun getUserInfo(uid: String): Result<Map<String, Any>> {
+    suspend fun getUserInfo(uid: String? = null): Result<Map<String, Any>> {
         return try {
+            val userId = uid ?: currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+
             val document = firestore.collection("users")
-                .document(uid)
+                .document(userId)
                 .get()
                 .await()
 
@@ -88,6 +110,22 @@ class AuthRepository {
             } else {
                 Result.failure(Exception("User not found"))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // Actualizează informațiile utilizatorului
+    suspend fun updateUserInfo(updates: Map<String, Any>): Result<Unit> {
+        return try {
+            val userId = currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+
+            firestore.collection("users")
+                .document(userId)
+                .update(updates)
+                .await()
+
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

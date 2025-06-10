@@ -7,9 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,11 +27,11 @@ import com.example.labelly_application.R
 
 @Composable
 fun ResetPassword(
+    email: String,
+    onEmailChange: (String) -> Unit,
     onResetClick: () -> Unit,
     onBackToLoginClick: () -> Unit
 ) {
-    var newPassword by remember { mutableStateOf("") }
-
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -89,9 +91,20 @@ fun ResetPassword(
                         textAlign = TextAlign.Center
                     )
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Enter your email to receive a password reset link",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF757575),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // New Password Field
+                    // Email Field
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -109,17 +122,17 @@ fun ResetPassword(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = "New Password",
+                                imageVector = Icons.Default.Email,
+                                contentDescription = "Email",
                                 tint = Color(0xFF8B0000),
                                 modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(14.dp))
 
                             Box(modifier = Modifier.fillMaxWidth()) {
-                                if (newPassword.isEmpty()) {
+                                if (email.isEmpty()) {
                                     Text(
-                                        text = "NEW PASSWORD",
+                                        text = "YOUR EMAIL ADDRESS",
                                         color = Color(0xFF8B0000),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
@@ -127,10 +140,11 @@ fun ResetPassword(
                                     )
                                 }
                                 BasicTextField(
-                                    value = newPassword,
-                                    onValueChange = { newPassword = it },
+                                    value = email,
+                                    onValueChange = onEmailChange,
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                                     textStyle = androidx.compose.ui.text.TextStyle(
                                         color = Color(0xFF8B0000),
                                         fontSize = 15.sp,
@@ -143,7 +157,7 @@ fun ResetPassword(
 
                     Spacer(modifier = Modifier.height(40.dp))
 
-                    // Reset Password Button
+                    // Send Reset Email Button
                     Button(
                         onClick = onResetClick,
                         modifier = Modifier
@@ -156,7 +170,7 @@ fun ResetPassword(
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
                     ) {
                         Text(
-                            text = "RESET PASSWORD",
+                            text = "SEND RESET EMAIL",
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,

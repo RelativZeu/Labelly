@@ -16,6 +16,8 @@ import com.example.labelly_application.ui.auth.ResetPassword
 import com.example.labelly_application.ui.main.LabellyScreen
 import com.example.labelly_application.ui.theme.Labelly_ApplicationTheme
 import com.example.labelly_application.viewmodel.AuthViewModel
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,16 +104,29 @@ fun LoginScreenWithFirebase(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val uiState by authViewModel.uiState.collectAsState()
+    val context = LocalContext.current // NOU!
 
-    // Afișează erori sau mesaje de succes
+    // ÎNLOCUIEȘTE vechiul LaunchedEffect cu acesta:
     LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let {
-            println("Login Error: $it")
-            // Aici poți adăuga un Toast sau Snackbar
+        uiState.errorMessage?.let { errorMsg ->
+            Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+            authViewModel.clearMessages()
+        }
+    }
+
+    // ADAUGĂ și pentru mesaje de succes:
+    LaunchedEffect(uiState.successMessage) {
+        uiState.successMessage?.let { successMsg ->
+            Toast.makeText(context, successMsg, Toast.LENGTH_SHORT).show()
+            authViewModel.clearMessages()
         }
     }
 
     LoginScreen(
+        email = email,
+        password = password,
+        onEmailChange = { email = it },
+        onPasswordChange = { password = it },
         onLoginClick = {
             authViewModel.login(email, password) {
                 onLoginSuccess()
@@ -140,6 +155,12 @@ fun CreateAccountScreenWithFirebase(
     }
 
     CreateAccountScreen(
+        username = username,
+        email = email,
+        password = password,
+        onUsernameChange = { username = it },
+        onEmailChange = { email = it },
+        onPasswordChange = { password = it },
         onCreateClick = {
             authViewModel.register(email, password, username) {
                 onCreateSuccess()
@@ -166,6 +187,8 @@ fun ResetPasswordScreenWithFirebase(
     }
 
     ResetPassword(
+        email = email,
+        onEmailChange = { email = it },
         onResetClick = {
             authViewModel.resetPassword(email) {
                 onNavigateToLogin()

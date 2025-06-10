@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.ArrowForward
+//import androidx.compose.material.icons.filled.Visibility
+//import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +23,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,12 +33,15 @@ import com.example.labelly_application.R
 
 @Composable
 fun LoginScreen(
+    email: String,
+    password: String,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
     onCreateAccountClick: () -> Unit,
     onForgotPasswordClick: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -89,7 +98,6 @@ fun LoginScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    //.weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp, vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -142,9 +150,10 @@ fun LoginScreen(
                             }
                             BasicTextField(
                                 value = email,
-                                onValueChange = { email = it },
+                                onValueChange = onEmailChange,
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                                 textStyle = androidx.compose.ui.text.TextStyle(
                                     color = Color(0xFF6A1B9A),
                                     fontSize = 14.sp,
@@ -182,7 +191,7 @@ fun LoginScreen(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
 
-                        Box(modifier = Modifier.fillMaxWidth()) {
+                        Box(modifier = Modifier.weight(1f)) {
                             if (password.isEmpty()) {
                                 Text(
                                     text = "PASSWORD",
@@ -194,14 +203,28 @@ fun LoginScreen(
                             }
                             BasicTextField(
                                 value = password,
-                                onValueChange = { password = it },
+                                onValueChange = onPasswordChange,
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
+                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                                 textStyle = androidx.compose.ui.text.TextStyle(
                                     color = Color(0xFF6A1B9A),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium
                                 )
+                            )
+                        }
+
+                        TextButton(
+                            onClick = { passwordVisible = !passwordVisible },
+                            modifier = Modifier.padding(start = 4.dp)
+                        ) {
+                            Text(
+                                text = if (passwordVisible) "Hide" else "Show",
+                                color = Color(0xFF6A1B9A),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
