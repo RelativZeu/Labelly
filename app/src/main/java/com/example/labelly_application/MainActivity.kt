@@ -37,9 +37,8 @@ import com.example.labelly_application.ui.main.LabellyScreen
 import com.example.labelly_application.ui.theme.Labelly_ApplicationTheme
 import com.example.labelly_application.viewmodel.AuthViewModel
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
-
+import com.example.labelly_application.ui.explanations.SymbolExplanationsScreen
+import com.example.labelly_application.ui.selection.ManualSymbolSelectionScreen
 
 // Data class pentru simbolurile de îngrijire
 data class CareSymbol(
@@ -79,10 +78,12 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val authViewModel: AuthViewModel = viewModel()
     val uiState by authViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     // State pentru navigare
     var currentScreen by remember { mutableStateOf("login") }
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var detectedSymbols by remember { mutableStateOf<List<CareSymbol>>(emptyList()) }
 
     // Verifică dacă utilizatorul este deja logat
     LaunchedEffect(uiState.isLoggedIn) {
@@ -122,7 +123,9 @@ fun AppNavigation() {
                     currentScreen = "camera"
                 },
                 onSymbolsClick = {
-                    println("Symbols legend clicked!")
+                    // Resetează capturedImageUri pentru a indica că vine de la main menu
+                    capturedImageUri = null
+                    currentScreen = "manual_symbol_selection"
                 },
                 onLogoutClick = {
                     authViewModel.logout {
@@ -153,35 +156,51 @@ fun AppNavigation() {
                 onScanAgain = {
                     currentScreen = "camera"
                 },
-                onCorrectClick = {
-                    // Navighează la pagina cu explicații
+                onCorrectClick = { symbols ->
+                    detectedSymbols = symbols
                     currentScreen = "symbol_explanations"
                 },
                 onIncorrectClick = {
-                    // Navighează la pagina de selecție manuală
                     currentScreen = "manual_symbol_selection"
                 }
             )
         }
 
         "symbol_explanations" -> {
-            // TODO: Implementează pagina cu explicații pentru simboluri
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Symbol Explanations Screen - To be implemented")
-            }
+            SymbolExplanationsScreen(
+                detectedSymbols = detectedSymbols,
+                onBackClick = {
+                    if (capturedImageUri != null) {
+                        currentScreen = "photo_result"
+                    } else {
+                        currentScreen = "labelly_main"
+                    }
+                },
+                onSaveClick = {
+                    Toast.makeText(
+                        context,
+                        "Ghid salvat cu succes!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    currentScreen = "labelly_main"
+                }
+            )
         }
 
         "manual_symbol_selection" -> {
-            // TODO: Implementează pagina de selecție manuală a simbolurilor
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Manual Symbol Selection Screen - To be implemented")
-            }
+            ManualSymbolSelectionScreen(
+                onBackClick = {
+                    if (capturedImageUri != null) {
+                        currentScreen = "photo_result"
+                    } else {
+                        currentScreen = "labelly_main"
+                    }
+                },
+                onConfirmSelection = { selectedSymbols ->
+                    detectedSymbols = selectedSymbols
+                    currentScreen = "symbol_explanations"
+                }
+            )
         }
     }
 }
@@ -198,7 +217,6 @@ fun LoginScreenWithFirebase(
     val uiState by authViewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Toast pentru erori
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { errorMsg ->
             Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
@@ -206,7 +224,6 @@ fun LoginScreenWithFirebase(
         }
     }
 
-    // Toast pentru succes
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let { successMsg ->
             Toast.makeText(context, successMsg, Toast.LENGTH_SHORT).show()
@@ -241,7 +258,6 @@ fun CreateAccountScreenWithFirebase(
     val uiState by authViewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Toast pentru erori
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { errorMsg ->
             Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
@@ -249,7 +265,6 @@ fun CreateAccountScreenWithFirebase(
         }
     }
 
-    // Toast pentru succes
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let { successMsg ->
             Toast.makeText(context, successMsg, Toast.LENGTH_SHORT).show()
@@ -282,7 +297,6 @@ fun ResetPasswordScreenWithFirebase(
     val uiState by authViewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Toast pentru erori
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { errorMsg ->
             Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
@@ -290,7 +304,6 @@ fun ResetPasswordScreenWithFirebase(
         }
     }
 
-    // Toast pentru succes
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let { successMsg ->
             Toast.makeText(context, successMsg, Toast.LENGTH_SHORT).show()
@@ -306,7 +319,7 @@ fun ResetPasswordScreenWithFirebase(
         onEmailChange = { email = it },
         onResetClick = {
             authViewModel.resetPassword(email) {
-                // Success callback este gestionat de LaunchedEffect de mai sus
+                // Success callback este gestionat de LaunchedEffect
             }
         },
         onBackToLoginClick = onNavigateToLogin
@@ -318,8 +331,8 @@ fun PhotoResultScreen(
     imageUri: Uri?,
     onBackClick: () -> Unit,
     onScanAgain: () -> Unit,
-    onCorrectClick: () -> Unit = { println("Navigate to ExplanationScreen") },
-    onIncorrectClick: () -> Unit = { println("Navigate to ManualSelectionScreen") }
+    onCorrectClick: (List<CareSymbol>) -> Unit,
+    onIncorrectClick: () -> Unit
 ) {
     var analysisComplete by remember { mutableStateOf(false) }
     var detectedSymbols by remember { mutableStateOf<List<CareSymbol>>(emptyList()) }
@@ -373,7 +386,7 @@ fun PhotoResultScreen(
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
-            // Image display (reduced size when analysis is complete)
+            // Image display
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -395,7 +408,6 @@ fun PhotoResultScreen(
 
             // Results section
             if (analysisComplete) {
-                // Card cu simbolurile detectate (cu padding bottom pentru a nu acoperi butoanele)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -452,7 +464,6 @@ fun PhotoResultScreen(
 
                             Button(
                                 onClick = {
-                                    // Simulează analiza
                                     detectedSymbols = mockDetectedSymbols
                                     analysisComplete = true
                                 },
@@ -476,7 +487,7 @@ fun PhotoResultScreen(
             }
         }
 
-        // Întrebarea și butoanele fixate jos (afișate doar când analiza e completă)
+        // Întrebarea și butoanele fixate jos
         if (analysisComplete && detectedSymbols.isNotEmpty()) {
             Card(
                 modifier = Modifier
@@ -525,7 +536,9 @@ fun PhotoResultScreen(
 
                         // Buton DA
                         Button(
-                            onClick = onCorrectClick,
+                            onClick = {
+                                onCorrectClick(detectedSymbols)
+                            },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(56.dp),
@@ -555,7 +568,7 @@ fun AnalysisResultsSection(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Header cu icon și titlu
+        // Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -607,16 +620,15 @@ fun AnalysisResultsSection(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                   // .weight(1f)
                     .padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 200.dp) // Spațiu pentru butoanele fixe
+                contentPadding = PaddingValues(bottom = 200.dp) // ajustat să nu se suprapună
             ) {
                 itemsIndexed(detectedSymbols) { index, symbol ->
                     CompactSymbolItem(symbol = symbol)
-
-                    // Afișează un separator sau indicator după primele 2 simboluri
-                    if (index == 1 && detectedSymbols.size > 2) {
+                }
+                if (detectedSymbols.size > 2) {
+                    item {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -715,7 +727,6 @@ fun DetectedSymbolItem(symbol: CareSymbol) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Symbol icon
             Text(
                 text = symbol.icon,
                 fontSize = 24.sp,
@@ -726,7 +737,6 @@ fun DetectedSymbolItem(symbol: CareSymbol) {
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Symbol info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = symbol.description,
@@ -742,7 +752,6 @@ fun DetectedSymbolItem(symbol: CareSymbol) {
                 )
             }
 
-            // Confidence score
             Text(
                 text = "${(symbol.confidence * 100).toInt()}%",
                 fontSize = 12.sp,
