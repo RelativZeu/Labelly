@@ -1,0 +1,31 @@
+0,do_not_wash
+1,do_not_bleach
+2,iron_low_temperature
+3,professional dry mild P
+4,drying tumble not
+5,washing not
+6,bleaching not
+7,ironing plate 110
+8,washing normal 40
+9,ironing plate 150
+10,professional dry normal P
+11,washing_normal_40
+12,bleaching_not
+13,drying_tumble_not
+14,ironing_plate_150
+15,professional_dry_normal_P
+16,washing_normal_30
+17,ironing_plate_110
+18,professional_dry_not
+19,professional_dry_mild_P
+20,washing_hand_40
+21,bleaching_any
+22,drying_tumble_lower_60
+23,washing_veryMild_30
+24,washing_mild_40
+25,ironing_not
+26,washing_veryMild_40
+27,bleaching_onlySome
+28,drying_tumble_normal_80
+29,ironing_plate_200
+30,washing_not

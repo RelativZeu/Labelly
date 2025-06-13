@@ -2,6 +2,7 @@ package com.example.labelly_application
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -39,6 +40,11 @@ import com.example.labelly_application.viewmodel.AuthViewModel
 import androidx.compose.ui.text.style.TextAlign
 import com.example.labelly_application.ui.explanations.SymbolExplanationsScreen
 import com.example.labelly_application.ui.selection.ManualSymbolSelectionScreen
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.example.labelly_application.data.repository.SymbolAnalysisRepository
+import kotlinx.coroutines.launch
 
 // Data class pentru simbolurile de îngrijire
 data class CareSymbol(
@@ -335,15 +341,19 @@ fun PhotoResultScreen(
     onIncorrectClick: () -> Unit
 ) {
     var analysisComplete by remember { mutableStateOf(false) }
+    var isAnalyzing by remember { mutableStateOf(false) }
     var detectedSymbols by remember { mutableStateOf<List<CareSymbol>>(emptyList()) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val mockDetectedSymbols = listOf(
-        CareSymbol("wash_30", "washing", "🧺", "Spălare la 30°C", 0.85f),
-        CareSymbol("no_bleach", "bleaching", "△", "Nu se înălbește", 0.91f),
-        CareSymbol("no_tumble_dry", "drying", "◯", "Nu se usucă la uscător", 0.92f),
-        CareSymbol("iron_low", "ironing", "🔥", "Călcare la temperatură mică", 0.78f),
-        CareSymbol("dry_clean", "dry_cleaning", "○", "Curățare chimică", 0.88f)
-    )
+    val context = LocalContext.current
+    val symbolAnalysisRepository = remember { SymbolAnalysisRepository(context) }
+
+    // Cleanup când componenta este distrusă
+    DisposableEffect(Unit) {
+        onDispose {
+            symbolAnalysisRepository.close()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -374,7 +384,11 @@ fun PhotoResultScreen(
                 }
 
                 Text(
-                    text = if (analysisComplete) "Rezultate Analiză" else "Etichetă Capturată",
+                    text = when {
+                        isAnalyzing -> "Analizez..."
+                        analysisComplete -> "Rezultate Analiză"
+                        else -> "Etichetă Capturată"
+                    },
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -404,6 +418,31 @@ fun PhotoResultScreen(
                         contentScale = ContentScale.Fit
                     )
                 }
+
+                // Indicator de încărcare peste imagine
+                if (isAnalyzing) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.5f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Analizez simbolurile...",
+                                color = Color.White,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                }
             }
 
             // Results section
@@ -420,7 +459,7 @@ fun PhotoResultScreen(
                         detectedSymbols = detectedSymbols
                     )
                 }
-            } else {
+            } else if (!isAnalyzing) {
                 // Initial buttons
                 Card(
                     modifier = Modifier
@@ -440,6 +479,24 @@ fun PhotoResultScreen(
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
+
+                        if (errorMessage != null) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFFFEBEE)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = "❌ $errorMessage",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFFE53935),
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
 
                         Text(
                             text = "✅ Imaginea a fost capturată cu succes!",
@@ -464,13 +521,45 @@ fun PhotoResultScreen(
 
                             Button(
                                 onClick = {
-                                    detectedSymbols = mockDetectedSymbols
-                                    analysisComplete = true
+                                    isAnalyzing = true
+                                    errorMessage = null
                                 },
                                 modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                                enabled = !isAnalyzing
                             ) {
-                                Text("🔍 Analizează", fontWeight = FontWeight.Bold)
+                                if (isAnalyzing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Text("🔍 Analizează", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+
+                        // Bloc LaunchedEffect pentru analiză YOLO
+                        if (isAnalyzing && imageUri != null) {
+                            LaunchedEffect(isAnalyzing, imageUri) {
+                                try {
+                                    val result = symbolAnalysisRepository.analyzeImage(imageUri)
+                                    result.fold(
+                                        onSuccess = { symbols ->
+                                            detectedSymbols = symbols
+                                            analysisComplete = true
+                                            isAnalyzing = false
+                                        },
+                                        onFailure = { error ->
+                                            errorMessage = "Eroare la analiză: ${error.message}"
+                                            isAnalyzing = false
+                                        }
+                                    )
+                                } catch (e: Exception) {
+                                    errorMessage = "Eroare neașteptată: ${e.message}"
+                                    isAnalyzing = false
+                                }
                             }
                         }
 
