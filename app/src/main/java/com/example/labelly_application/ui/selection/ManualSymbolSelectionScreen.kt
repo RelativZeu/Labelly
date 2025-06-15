@@ -1,5 +1,6 @@
 package com.example.labelly_application.ui.selection
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,17 +17,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.labelly_application.CareSymbol
+import com.example.labelly_application.R
 
-// Data pentru toate simbolurile disponibile
+// Data pentru toate simbolurile disponibile - actualizată cu drawable resources
 data class SymbolOption(
     val key: String,
-    val icon: String,
+    val drawableRes: Int,
     val description: String,
     val category: String
 )
@@ -165,7 +169,7 @@ fun ManualSymbolSelectionScreen(
                         CareSymbol(
                             key = it.key,
                             category = it.category,
-                            icon = it.icon,
+                            icon = "", // Nu mai folosim icon string
                             description = it.description,
                             confidence = 1.0f // 100% sigur pentru selecție manuală
                         )
@@ -321,12 +325,26 @@ fun SymbolSelectionItem(
                 }
             }
 
-            // Symbol icon
-            Text(
-                text = symbol.icon,
-                fontSize = 32.sp,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+            // Symbol image
+            Card(
+                modifier = Modifier.size(50.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = symbol.drawableRes),
+                    contentDescription = symbol.description,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Symbol description
             Text(
@@ -356,42 +374,42 @@ fun getCategoryDisplayName(category: String): String {
 fun getAllSymbolCategories(): Map<String, Pair<String, List<SymbolOption>>> {
     return mapOf(
         "washing" to ("🧺" to listOf(
-            SymbolOption("wash_30", "30°", "Spălare la 30°C", "washing"),
-            SymbolOption("wash_40", "40°", "Spălare la 40°C", "washing"),
-            SymbolOption("wash_60", "60°", "Spălare la 60°C", "washing"),
-            SymbolOption("wash_95", "95°", "Spălare la 95°C", "washing"),
-            SymbolOption("hand_wash", "🤲", "Spălare manuală", "washing"),
-            SymbolOption("no_wash", "🚫", "Nu se spală", "washing")
+            SymbolOption("wash_30", R.drawable.wash_30, "Spălare la 30°C", "washing"),
+            SymbolOption("wash_40", R.drawable.wash_40, "Spălare la 40°C", "washing"),
+            SymbolOption("wash_60", R.drawable.wash_60, "Spălare la 60°C", "washing"),
+            SymbolOption("wash_95", R.drawable.wash_95, "Spălare la 95°C", "washing"),
+            SymbolOption("hand_wash", R.drawable.hand_wash, "Spălare manuală", "washing"),
+            SymbolOption("no_wash", R.drawable.no_wash, "Nu se spală", "washing")
         )),
 
         "bleaching" to ("🧪" to listOf(
-            SymbolOption("bleach_allowed", "△", "Se poate înălbi", "bleaching"),
-            SymbolOption("no_bleach", "🚫△", "Nu se înălbește", "bleaching"),
-            SymbolOption("non_chlorine_bleach", "△̸", "Doar înălbitor fără clor", "bleaching")
+            SymbolOption("bleach_allowed", R.drawable.bleach_allowed, "Se poate înălbi", "bleaching"),
+            SymbolOption("no_bleach", R.drawable.no_bleach, "Nu se înălbește", "bleaching"),
+            SymbolOption("non_chlorine_bleach", R.drawable.non_chlorine_bleach, "Doar înălbitor fără clor", "bleaching")
         )),
 
         "drying" to ("🌀" to listOf(
-            SymbolOption("tumble_dry_normal", "◯", "Uscare normală", "drying"),
-            SymbolOption("tumble_dry_low", "◯•", "Uscare la temp. mică", "drying"),
-            SymbolOption("tumble_dry_high", "◯••", "Uscare la temp. înaltă", "drying"),
-            SymbolOption("no_tumble_dry", "🚫◯", "Nu se usucă la uscător", "drying"),
-            SymbolOption("line_dry", "│", "Uscare pe sârmă", "drying"),
-            SymbolOption("flat_dry", "═", "Uscare pe orizontală", "drying")
+            SymbolOption("tumble_dry_normal", R.drawable.tumble_dry_normal, "Uscare normală", "drying"),
+            SymbolOption("tumble_dry_low", R.drawable.tumble_dry_low, "Uscare la temp. mică", "drying"),
+            SymbolOption("tumble_dry_high", R.drawable.tumble_dry_high, "Uscare la temp. înaltă", "drying"),
+            SymbolOption("no_tumble_dry", R.drawable.no_tumble_dry, "Nu se usucă la uscător", "drying"),
+            SymbolOption("line_dry", R.drawable.line_dry, "Uscare verticală", "drying"),
+            SymbolOption("flat_dry", R.drawable.flat_dry, "Uscare pe orizontală", "drying")
         )),
 
         "ironing" to ("♨️" to listOf(
-            SymbolOption("iron_low", "•", "Călcare temp. mică", "ironing"),
-            SymbolOption("iron_medium", "••", "Călcare temp. medie", "ironing"),
-            SymbolOption("iron_high", "•••", "Călcare temp. înaltă", "ironing"),
-            SymbolOption("no_iron", "🚫", "Nu se calcă", "ironing"),
-            SymbolOption("no_steam", "⚡", "Fără abur", "ironing")
+            SymbolOption("iron_low", R.drawable.iron_low, "Călcare temp. mică", "ironing"),
+            SymbolOption("iron_medium", R.drawable.iron_medium, "Călcare temp. medie", "ironing"),
+            SymbolOption("iron_high", R.drawable.iron_high, "Călcare temp. înaltă", "ironing"),
+            SymbolOption("no_iron", R.drawable.no_iron, "Nu se calcă", "ironing"),
+            SymbolOption("no_steam", R.drawable.no_steam, "Fără abur", "ironing")
         )),
 
         "dry_cleaning" to ("🧽" to listOf(
-            SymbolOption("dry_clean", "○", "Curățare chimică", "dry_cleaning"),
-            SymbolOption("no_dry_clean", "🚫○", "Nu se curăță chimic", "dry_cleaning"),
-            SymbolOption("dry_clean_petroleum", "P", "Curățare cu solvent pe bază de petrol", "dry_cleaning"),
-            SymbolOption("gentle_dry_clean", "F", "Curățare chimică delicată", "dry_cleaning")
+            SymbolOption("dry_clean", R.drawable.dry_clean, "Curățare chimică", "dry_cleaning"),
+            SymbolOption("no_dry_clean", R.drawable.no_dry_clean, "Nu se curăță chimic", "dry_cleaning"),
+            SymbolOption("dry_clean_petroleum", R.drawable.dry_clean_petroleum, "Curățare cu solvent pe bază de petrol", "dry_cleaning"),
+            SymbolOption("gentle_dry_clean", R.drawable.gentle_dry_clean, "Curățare chimică delicată", "dry_cleaning")
         ))
     )
 }

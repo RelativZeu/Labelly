@@ -38,6 +38,13 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // ADAUGĂ ACEASTĂ CONFIGURAȚIE PENTRU ASSETS
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("src/main/assets")
+        }
+    }
 }
 
 dependencies {
@@ -65,13 +72,12 @@ dependencies {
     // Pentru navigare (opțional pentru viitor)
     implementation("androidx.navigation:navigation-compose:2.7.6")
 
-// Pentru permissions
+    // Pentru permissions
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
     // Pentru loading images (Coil)
     implementation("io.coil-kt:coil-compose:2.5.0")
 
     implementation("androidx.compose.material:material-icons-extended:1.5.0")
-
 
     // TensorFlow Lite pentru YOLO
     implementation("org.tensorflow:tensorflow-lite:2.14.0")

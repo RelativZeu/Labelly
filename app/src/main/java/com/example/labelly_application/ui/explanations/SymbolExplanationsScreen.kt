@@ -1,5 +1,6 @@
 package com.example.labelly_application.ui.explanations
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,11 +15,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.labelly_application.CareSymbol
+import com.example.labelly_application.R
 
 @Composable
 fun SymbolExplanationsScreen(
@@ -235,26 +239,31 @@ fun SymbolExplanationItem(symbol: CareSymbol) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
-        // Symbol icon
+        // Symbol image
         Card(
-            modifier = Modifier.size(40.dp),
-            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.size(50.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color(0xFFE3F2FD)
-            )
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = symbol.icon,
-                    fontSize = 20.sp
+                Image(
+                    painter = painterResource(id = getDrawableResourceForSymbol(symbol.key)),
+                    contentDescription = symbol.description,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    contentScale = ContentScale.Fit
                 )
             }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(16.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -272,6 +281,26 @@ fun SymbolExplanationItem(symbol: CareSymbol) {
                 color = Color(0xFF616161),
                 lineHeight = 18.sp
             )
+
+            // Confidence indicator dacă este mai mic de 100%
+            if (symbol.confidence < 1.0f) {
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFF3E0)
+                    ),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = "Acuratețe: ${(symbol.confidence * 100).toInt()}%",
+                        fontSize = 11.sp,
+                        color = Color(0xFFFF8F00),
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -338,6 +367,48 @@ fun GeneralRecommendationsCard() {
     }
 }
 
+// Funcție helper pentru a obține drawable resource ID-ul bazat pe symbol key
+fun getDrawableResourceForSymbol(symbolKey: String): Int {
+    return when (symbolKey) {
+        // Washing symbols
+        "wash_30" -> R.drawable.wash_30
+        "wash_40" -> R.drawable.wash_40
+        "wash_60" -> R.drawable.wash_60
+        "wash_95" -> R.drawable.wash_95
+        "hand_wash" -> R.drawable.hand_wash
+        "no_wash" -> R.drawable.no_wash
+
+        // Bleaching symbols
+        "bleach_allowed" -> R.drawable.bleach_allowed
+        "no_bleach" -> R.drawable.no_bleach
+        "non_chlorine_bleach" -> R.drawable.non_chlorine_bleach
+
+        // Drying symbols
+        "tumble_dry_normal" -> R.drawable.tumble_dry_normal
+        "tumble_dry_low" -> R.drawable.tumble_dry_low
+        "tumble_dry_high" -> R.drawable.tumble_dry_high
+        "no_tumble_dry" -> R.drawable.no_tumble_dry
+        "line_dry" -> R.drawable.line_dry
+        "flat_dry" -> R.drawable.flat_dry
+
+        // Ironing symbols
+        "iron_low" -> R.drawable.iron_low
+        "iron_medium" -> R.drawable.iron_medium
+        "iron_high" -> R.drawable.iron_high
+        "no_iron" -> R.drawable.no_iron
+        "no_steam" -> R.drawable.no_steam
+
+        // Dry cleaning symbols
+        "dry_clean" -> R.drawable.dry_clean
+        "no_dry_clean" -> R.drawable.no_dry_clean
+        "dry_clean_petroleum" -> R.drawable.dry_clean_petroleum
+        "gentle_dry_clean" -> R.drawable.gentle_dry_clean
+
+        // Default fallback
+        else -> R.drawable.front // sau orice imagine default
+    }
+}
+
 fun getCategoryDisplayName(category: String): String {
     return when (category) {
         "washing" -> "Spălare"
@@ -354,22 +425,31 @@ fun getDetailedExplanation(symbolKey: String): String {
         "wash_30" -> "Spălați la maxim 30°C. Ideal pentru materiale delicate și haine colorate care pot decolora."
         "wash_40" -> "Spălați la maxim 40°C. Potrivit pentru bumbac și materiale mixte moderat murdare."
         "wash_60" -> "Spălați la maxim 60°C. Pentru rufe albe și foarte murdare."
+        "wash_95" -> "Spălați la maxim 95°C. Pentru rufe foarte rezistente, albe și foarte murdare."
+        "hand_wash" -> "Spălați doar manual, cu apă călduță și detergent delicat. Nu frecați prea tare."
         "no_wash" -> "Nu spălați cu apă. Necesită curățare chimică profesională."
 
-        "no_bleach" -> "Nu folosiți înălbitor sau detergenți cu clor. Poate deteriora materialul."
         "bleach_allowed" -> "Se poate folosi înălbitor. Urmați instrucțiunile de pe produs."
+        "no_bleach" -> "Nu folosiți înălbitor sau detergenți cu clor. Poate deteriora materialul."
+        "non_chlorine_bleach" -> "Se poate folosi doar înălbitor fără clor (pe bază de oxigen)."
 
-        "no_tumble_dry" -> "Nu uscați în uscător. Uscați natural pentru a evita deformarea."
-        "tumble_dry_low" -> "Uscați la temperatură scăzută. Pentru materiale sensibile la căldură."
         "tumble_dry_normal" -> "Uscați la temperatură normală. Pentru majoritatea materialelor."
+        "tumble_dry_low" -> "Uscați la temperatură scăzută. Pentru materiale sensibile la căldură."
+        "tumble_dry_high" -> "Uscați la temperatură înaltă. Pentru materiale groase și rezistente."
+        "no_tumble_dry" -> "Nu uscați în uscător. Uscați natural pentru a evita deformarea."
+        "line_dry" -> "Uscați pe sârmă sau umeraș. Ideal pentru majoritatea materialelor."
+        "flat_dry" -> "Uscați pe o suprafață plană. Pentru articole care se pot deforma (lână, etc.)."
 
         "iron_low" -> "Călcați la temperatură mică (max 110°C). Pentru materiale sintetice."
         "iron_medium" -> "Călcați la temperatură medie (max 150°C). Pentru lână și amestecuri."
         "iron_high" -> "Călcați la temperatură înaltă (max 200°C). Pentru bumbac și in."
         "no_iron" -> "Nu călcați. Materialul se poate topi sau deteriora."
+        "no_steam" -> "Călcați fără abur. Aburul poate deteriora acest material."
 
         "dry_clean" -> "Curățare chimică permisă. Duceți la curățătorie profesională."
         "no_dry_clean" -> "Nu curățați chimic. Poate deteriora materialul."
+        "dry_clean_petroleum" -> "Curățare chimică cu solvent pe bază de petrol. Specificați la curățătorie."
+        "gentle_dry_clean" -> "Curățare chimică delicată. Informați curățătoria despre necesitatea unui tratament blând."
 
         else -> "Urmați instrucțiunile specifice pentru acest simbol."
     }

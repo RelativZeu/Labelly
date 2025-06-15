@@ -1,4 +1,5 @@
-package com.example.labelly_application.ui.main
+
+/*package com.example.labelly_application.ui.main
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -110,6 +111,8 @@ class YoloSymbolDetector(private val context: Context) {
             val bitmap = BitmapFactory.decodeStream(inputStream)
             inputStream?.close()
 
+            Log.d("YOLO", "Image loaded: ${bitmap.width}x${bitmap.height}")
+
             val processedImage = preprocessImage(bitmap)
             val detections = runInference(processedImage)
             return@withContext postProcess(detections)
@@ -133,9 +136,17 @@ class YoloSymbolDetector(private val context: Context) {
     private fun runInference(tensorImage: TensorImage): Array<FloatArray> {
         val interpreter = this.interpreter ?: return emptyArray()
 
-        // Pentru modelul tău: [1, 35, 8400]
         val output = Array(1) { Array(35) { FloatArray(8400) } }
         interpreter.run(tensorImage.buffer, output)
+
+        // LOG-URI CORECTE
+        Log.d("YOLO", "Model output shape: [1, 35, 8400]")
+        Log.d("YOLO", "First few coord values: [${output[0][0][0]}, ${output[0][1][0]}, ${output[0][2][0]}, ${output[0][3][0]}]")
+
+        // Găsește max confidence din prima detecție
+        val firstDetectionClasses = FloatArray(31) { output[0][it + 4][0] }
+        Log.d("YOLO", "Max confidence in first detection: ${firstDetectionClasses.maxOrNull()}")
+        Log.d("YOLO", "All confidences in first detection: ${firstDetectionClasses.joinToString(", ")}")
 
         // Transpune din [1, 35, 8400] în [8400, 35]
         val transposed = Array(8400) { FloatArray(35) }
@@ -150,6 +161,9 @@ class YoloSymbolDetector(private val context: Context) {
     private fun postProcess(rawOutput: Array<FloatArray>): List<Detection> {
         val detections = mutableListOf<Detection>()
         val confidenceThreshold = 0.25f
+
+        Log.d("YOLO", "Processing ${rawOutput.size} detections")
+        var validDetections = 0
 
         for (i in rawOutput.indices) {
             val prediction = rawOutput[i]
@@ -171,7 +185,13 @@ class YoloSymbolDetector(private val context: Context) {
                 }
             }
 
+            if (maxProb > 0.1f) { // Log chiar și confidence-uri mici
+                Log.d("YOLO", "Detection $i: class=$maxIndex, confidence=$maxProb")
+            }
+
             if (maxProb > confidenceThreshold) {
+                validDetections++
+
                 val left = (x - w / 2) * inputSize
                 val top = (y - h / 2) * inputSize
                 val right = (x + w / 2) * inputSize
@@ -195,10 +215,104 @@ class YoloSymbolDetector(private val context: Context) {
             }
         }
 
+        Log.d("YOLO", "Found $validDetections valid detections above threshold $confidenceThreshold")
         return detections
     }
 
     fun close() {
         interpreter?.close()
+    }
+}*/
+package com.example.labelly_application.ui.main
+
+import android.content.Context
+import android.graphics.RectF
+import android.net.Uri
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+
+data class Detection(
+    val boundingBox: RectF,
+    val label: String,
+    val confidence: Float,
+    val symbolKey: String,
+    val category: String
+)
+
+class YoloSymbolDetector(private val context: Context) {
+
+    private var mockModel: Boolean = true
+
+    init {
+        loadModel()
+    }
+
+    private fun loadModel() {
+        try {
+            // Pentru test - folosim mock model
+            Log.d("YOLO", "Mock model loaded for testing")
+            mockModel = true
+        } catch (e: Exception) {
+            Log.e("YOLO", "Error loading model", e)
+        }
+    }
+
+    suspend fun detectSymbols(imageUri: Uri): List<Detection> = withContext(Dispatchers.IO) {
+        try {
+            Log.d("YOLO", "Starting mock symbol detection...")
+
+            // Simulăm procesarea imaginii
+            delay(2000) // 2 secunde pentru a simula procesarea
+
+            // Mock pentru test - returnează simboluri fake
+            Log.d("YOLO", "Mock detection completed - returning test symbols")
+
+            return@withContext listOf(
+                Detection(
+                    boundingBox = RectF(100f, 100f, 200f, 200f),
+                    label = "🤲 Spălare manuală",
+                    confidence = 0.95f,
+                    symbolKey = "hand_wash",
+                    category = "washing"
+                ),
+                Detection(
+                    boundingBox = RectF(300f, 100f, 400f, 200f),
+                    label = "30° Spălare 30°C",
+                    confidence = 0.88f,
+                    symbolKey = "wash_30",
+                    category = "washing"
+                ),
+                Detection(
+                    boundingBox = RectF(100f, 300f, 200f, 400f),
+                    label = "⊗ Nu se înălbește",
+                    confidence = 0.92f,
+                    symbolKey = "no_bleach",
+                    category = "bleaching"
+                ),
+                Detection(
+                    boundingBox = RectF(300f, 300f, 400f, 400f),
+                    label = "•• Călcare temperatură medie",
+                    confidence = 0.85f,
+                    symbolKey = "iron_150",
+                    category = "ironing"
+                ),
+                Detection(
+                    boundingBox = RectF(100f, 500f, 200f, 600f),
+                    label = "● Uscare uscător 60°C",
+                    confidence = 0.91f,
+                    symbolKey = "tumble_dry_low",
+                    category = "drying"
+                )
+            )
+        } catch (e: Exception) {
+            Log.e("YOLO", "Error in mock detection", e)
+            return@withContext emptyList()
+        }
+    }
+
+    fun close() {
+        Log.d("YOLO", "Mock detector closed")
     }
 }
