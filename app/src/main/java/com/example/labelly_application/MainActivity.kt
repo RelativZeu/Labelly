@@ -346,12 +346,44 @@ fun PhotoResultScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
-    val symbolAnalysisRepository = remember { SymbolAnalysisRepository(context) }
+    val symbolAnalysisRepository = remember {
+        Log.d("PhotoResult", "Creating SymbolAnalysisRepository")
+        SymbolAnalysisRepository(context)
+    }
 
     // Cleanup când componenta este distrusă
     DisposableEffect(Unit) {
         onDispose {
             symbolAnalysisRepository.close()
+        }
+    }
+
+    // BLOC LaunchedEffect pentru analiză YOLO - MUTAT AICI!
+    LaunchedEffect(isAnalyzing, imageUri) {
+        Log.d("PhotoResult", "LaunchedEffect triggered: isAnalyzing=$isAnalyzing, imageUri=$imageUri")
+
+        if (isAnalyzing && imageUri != null) {
+            Log.d("PhotoResult", "Starting analysis...")
+            try {
+                val result = symbolAnalysisRepository.analyzeImage(imageUri)
+                result.fold(
+                    onSuccess = { symbols ->
+                        Log.d("PhotoResult", "Analysis success: ${symbols.size} symbols detected")
+                        detectedSymbols = symbols
+                        analysisComplete = true
+                        isAnalyzing = false
+                    },
+                    onFailure = { error ->
+                        Log.e("PhotoResult", "Analysis failed: ${error.message}")
+                        errorMessage = "Eroare la analiză: ${error.message}"
+                        isAnalyzing = false
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("PhotoResult", "Analysis failed", e)
+                errorMessage = "Eroare neașteptată: ${e.message}"
+                isAnalyzing = false
+            }
         }
     }
 
@@ -521,6 +553,7 @@ fun PhotoResultScreen(
 
                             Button(
                                 onClick = {
+                                    Log.d("PhotoResult", "Analyze button clicked")
                                     isAnalyzing = true
                                     errorMessage = null
                                 },
@@ -536,29 +569,6 @@ fun PhotoResultScreen(
                                     )
                                 } else {
                                     Text("🔍 Analizează", fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-
-                        // Bloc LaunchedEffect pentru analiză YOLO
-                        if (isAnalyzing && imageUri != null) {
-                            LaunchedEffect(isAnalyzing, imageUri) {
-                                try {
-                                    val result = symbolAnalysisRepository.analyzeImage(imageUri)
-                                    result.fold(
-                                        onSuccess = { symbols ->
-                                            detectedSymbols = symbols
-                                            analysisComplete = true
-                                            isAnalyzing = false
-                                        },
-                                        onFailure = { error ->
-                                            errorMessage = "Eroare la analiză: ${error.message}"
-                                            isAnalyzing = false
-                                        }
-                                    )
-                                } catch (e: Exception) {
-                                    errorMessage = "Eroare neașteptată: ${e.message}"
-                                    isAnalyzing = false
                                 }
                             }
                         }
